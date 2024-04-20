@@ -1,0 +1,17 @@
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint.'MASTER']
+load-plugins = ["pylint_django"]
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+    "C0114", # missing-module-docstring (not required for every module)
+    "C0115", # missing-class-docstring (not required for every class)
+    "C0116", # missing-function-docstring (not required for every function)
+]

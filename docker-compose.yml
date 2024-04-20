@@ -1,0 +1,73 @@
+version: "3"
+services:
+  db:
+    image: postgres:16.2
+    hostname: db
+    container_name: db
+    volumes:
+      - ./docker-data/db:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: rm-local
+      POSTGRES_USER: rm-user
+      POSTGRES_PASSWORD: rm-password
+  rabbitmq:
+    image: rabbitmq:3.13.1
+    hostname: rabbitmq
+    container_name: rabbitmq
+    volumes:
+      - ./docker-data/rabbitmq:/var/lib/rabbitmq
+    ports:
+      - 5672:5672
+    environment:
+      - RABBITMQ_DEFAULT_USER=rm-user
+      - RABBITMQ_DEFAULT_PASS=rm-password
+  celery:
+    hostname: celery
+    container_name: celery
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    volumes:
+      - .:/code
+    ports:
+      - 8001:8001
+    environment:
+      DJANGO_SECRET_KEY: "django-insecure--ai&5%j@chyd54s25v862_3mcg1vozd6(_&4u87-387josue34"
+      DJANGO_DEBUG: 1
+      DJANGO_ALLOWED_HOSTS: localhost
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: rm-local
+      DB_USER: rm-user
+      DB_PASSWORD: rm-password
+      CELERY_BROKER_URL: "amqp://rm-user:rm-password@rabbitmq:5672"
+      CELERY_RESULT_BACKEND: "rpc://rm-user:rm-password@rabbitmq:5672"
+    depends_on:
+      - db
+      - rabbitmq
+  server:
+    hostname: server
+    container_name: server
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    volumes:
+      - .:/code
+    ports:
+      - 8000:8000
+    environment:
+      DJANGO_SECRET_KEY: "django-insecure--ai&5%j@chyd54s25v862_3mcg1vozd6(_&4u87-387josue34"
+      DJANGO_DEBUG: 1
+      DJANGO_ALLOWED_HOSTS: localhost
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: rm-local
+      DB_USER: rm-user
+      DB_PASSWORD: rm-password
+      CELERY_BROKER_URL: "amqp://rm-user:rm-password@rabbitmq:5672"
+      CELERY_RESULT_BACKEND: "rpc://rm-user:rm-password@rabbitmq:5672"
+    depends_on:
+      - db
+      - celery
